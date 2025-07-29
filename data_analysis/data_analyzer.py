@@ -63,6 +63,12 @@ def analyze_technologies(vacancies: List[Vacancy]) -> Dict[str, int]:
         return {}
 
 
+def generate_chart_filename() -> Path:
+    """Generate chart filename with current date and time"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return PROJECT_ROOT / f"technologies_chart_{timestamp}.png"
+
+
 def create_technology_chart(tech_data: Dict[str, int], top_n: int = 15) -> None:
     """Creates chart of top technologies"""
     try:
@@ -98,7 +104,7 @@ def create_technology_chart(tech_data: Dict[str, int], top_n: int = 15) -> None:
             plt.xticks(rotation=45, ha="right")
             plt.tight_layout()
 
-            chart_path = PROJECT_ROOT / "technologies_chart.png"
+            chart_path = generate_chart_filename()
             plt.savefig(chart_path, dpi=300, bbox_inches="tight")
             plt.show()
 

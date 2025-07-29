@@ -5,9 +5,9 @@ import sys
 import time
 
 from dataclasses import fields, astuple
+from datetime import datetime
 from pathlib import Path
 
-from selenium import webdriver
 from selenium.common import (
     ElementNotInteractableException,
     ElementClickInterceptedException,
@@ -130,9 +130,15 @@ def write_vacancies_to_csv_file(vacancies: list[Vacancy], root: str) -> None:
         logging.error(f"Error writing to CSV file: {str(e)}")
 
 
+def generate_csv_filename() -> Path:
+    """Generate CSV filename with current date and time"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return PROJECT_ROOT / f"python_vacancies_{timestamp}.csv"
+
+
 def get_all_python_vacancies() -> None:
     try:
-        csv_path = PROJECT_ROOT / "python_vacancies.csv"
+        csv_path = generate_csv_filename()
         write_vacancies_to_csv_file(parsing_page(), csv_path)
         logging.info("Finished writing to CSV file")
 
