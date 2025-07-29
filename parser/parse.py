@@ -129,6 +129,7 @@ def write_vacancies_to_csv_file(vacancies: list[Vacancy], root: str) -> None:
     except Exception as e:
         logging.error(f"Error writing to CSV file: {str(e)}")
 
+
 def get_all_python_vacancies() -> None:
     try:
         csv_path = PROJECT_ROOT / "python_vacancies.csv"
