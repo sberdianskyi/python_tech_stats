@@ -119,20 +119,21 @@ def parsing_page():
 
 
 def write_vacancies_to_csv_file(vacancies: list[Vacancy], root: str) -> None:
-    logging.info("Started writing to CSV file")
-    with open(root, "w", newline="", encoding="utf-8") as csv_file:
-        writer = csv.writer(csv_file)
-        writer.writerow(VACANCY_FIELDS)
-        writer.writerows([astuple(vacancy) for vacancy in vacancies])
+    try:
+        logging.info("Started writing to CSV file")
+        with open(root, "w", newline="", encoding="utf-8") as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow(VACANCY_FIELDS)
+            writer.writerows([astuple(vacancy) for vacancy in vacancies])
 
+    except Exception as e:
+        logging.error(f"Error writing to CSV file: {str(e)}")
 
 def get_all_python_vacancies() -> None:
-    csv_path = PROJECT_ROOT / "python_vacancies.csv"
-    write_vacancies_to_csv_file(parsing_page(), csv_path)
-    logging.info("Finished writing to CSV file")
+    try:
+        csv_path = PROJECT_ROOT / "python_vacancies.csv"
+        write_vacancies_to_csv_file(parsing_page(), csv_path)
+        logging.info("Finished writing to CSV file")
 
-
-if __name__ == "__main__":
-    with webdriver.Chrome() as driver:
-        set_driver(driver)
-        get_all_python_vacancies()
+    except Exception as e:
+        logging.error(f"Error in get_all_python_vacancies: {str(e)}")
