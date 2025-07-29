@@ -80,7 +80,7 @@ def get_vacancy_details(driver: WebDriver, link: str) -> Vacancy:
         logging.error(f"Failed to get details for {link}: {str(e)}")
 
 
-def parsing_page():
+def parsing_page() -> list[Vacancy]:
     try:
         url = f"{BASE_URL}vacancies/?category={CATEGORY}"
         driver = get_driver()
