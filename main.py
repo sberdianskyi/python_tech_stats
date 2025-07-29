@@ -21,6 +21,12 @@ logging.basicConfig(
 def main():
     """Main program function"""
     try:
+        # Check if CSV file already exists
+        csv_path = PROJECT_ROOT / "python_vacancies.csv"
+        if csv_path.exists():
+            logging.info("CSV file with data already exists. Program will exit.")
+            return
+
         options = Options()
         options.add_argument("--headless")
 
