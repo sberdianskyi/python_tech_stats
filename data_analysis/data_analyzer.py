@@ -1,5 +1,7 @@
 import csv
 import logging
+from datetime import datetime
+
 import matplotlib.pyplot as plt
 from collections import Counter
 from pathlib import Path
@@ -119,9 +121,6 @@ def create_technology_chart(tech_data: Dict[str, int], top_n: int = 15) -> None:
 def analyze_data_from_csv(csv_path: Path = None) -> None:
     """Main function for analyzing data from CSV"""
     try:
-        if csv_path is None:
-            csv_path = PROJECT_ROOT / "python_vacancies.csv"
-
         if not csv_path.exists():
             logging.error(f"CSV file not found: {csv_path}")
             return

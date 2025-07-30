@@ -3,6 +3,7 @@ import logging
 import random
 import sys
 import time
+import asyncio
 
 from dataclasses import fields, astuple
 from datetime import datetime
@@ -13,8 +14,11 @@ from selenium.common import (
     ElementClickInterceptedException,
     NoSuchElementException,
 )
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.webdriver import WebDriver
+from concurrent.futures import ThreadPoolExecutor
+from selenium.webdriver.chrome.options import Options
 
 from parser.parsing_item import Vacancy
 from parser.technologies import ALL_TECHNOLOGIES
@@ -49,8 +53,24 @@ logging.basicConfig(
 )
 
 
-def get_vacancy_details(driver: WebDriver, link: str) -> Vacancy:
+async def get_vacancy_details(
+    link: str, semaphore: asyncio.Semaphore
+) -> Vacancy | None:
+    async with semaphore:
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            return await loop.run_in_executor(executor, get_vacancy_details_sync, link)
+
+
+def get_vacancy_details_sync(link: str) -> Vacancy | None:
+    driver = None
     try:
+        options = Options()
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        driver = webdriver.Chrome(options=options)
+
         time.sleep(random.uniform(2, 4))
         driver.get(link)
 
@@ -78,9 +98,14 @@ def get_vacancy_details(driver: WebDriver, link: str) -> Vacancy:
 
     except Exception as e:
         logging.error(f"Failed to get details for {link}: {str(e)}")
+        return None
+
+    finally:
+        if driver:
+            driver.quit()
 
 
-def parsing_page() -> list[Vacancy]:
+async def parsing_page() -> list[Vacancy] | None:
     try:
         url = f"{BASE_URL}vacancies/?category={CATEGORY}"
         driver = get_driver()
@@ -108,17 +133,22 @@ def parsing_page() -> list[Vacancy]:
             for vacancy in page_vacancies
         ]
 
-        all_vacancies = [get_vacancy_details(driver, link) for link in vacancy_links]
-        all_vacancies = [v for v in all_vacancies if v is not None]
-        logging.info("Ended parsing page")
+        semaphore = asyncio.Semaphore(5)
+        tasks = [get_vacancy_details(link, semaphore) for link in vacancy_links]
+        all_vacancies = await asyncio.gather(*tasks)
+        vacancies = [
+            vacancy for vacancy in all_vacancies if isinstance(vacancy, Vacancy)
+        ]
+        logging.info(f"Ended parsing page. Got {len(vacancies)} vacancies")
 
-        return all_vacancies
+        return vacancies
 
     except Exception as e:
         logging.error(f"Error during page parsing: {str(e)}")
+        return []
 
 
-def write_vacancies_to_csv_file(vacancies: list[Vacancy], root: str) -> None:
+def write_vacancies_to_csv_file(vacancies: list[Vacancy], root: Path) -> None:
     try:
         logging.info("Started writing to CSV file")
         with open(root, "w", newline="", encoding="utf-8") as csv_file:
@@ -136,11 +166,13 @@ def generate_csv_filename() -> Path:
     return PROJECT_ROOT / f"python_vacancies_{timestamp}.csv"
 
 
-def get_all_python_vacancies() -> None:
+async def get_all_python_vacancies() -> Path | None:
     try:
         csv_path = generate_csv_filename()
-        write_vacancies_to_csv_file(parsing_page(), csv_path)
+        vacancies = await parsing_page()
+        write_vacancies_to_csv_file(vacancies, csv_path)
         logging.info("Finished writing to CSV file")
+        return csv_path
 
     except Exception as e:
         logging.error(f"Error in get_all_python_vacancies: {str(e)}")

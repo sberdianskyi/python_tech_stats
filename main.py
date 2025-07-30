@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import sys
 from pathlib import Path
@@ -18,7 +19,7 @@ logging.basicConfig(
 )
 
 
-def main():
+async def main_async():
     """Main program function"""
     try:
         options = Options()
@@ -30,7 +31,7 @@ def main():
         try:
             with webdriver.Chrome(options=options) as driver:
                 set_driver(driver)
-                csv_path = get_all_python_vacancies()
+                csv_path = await get_all_python_vacancies()
         except Exception as e:
             logging.error(f"Error during vacancy parsing: {str(e)}")
 
@@ -45,6 +46,11 @@ def main():
 
     except Exception as e:
         logging.error(f"Critical error in main function: {str(e)}")
+
+
+def main():
+    """Main program function"""
+    asyncio.run(main_async())
 
 
 if __name__ == "__main__":
